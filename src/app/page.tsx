@@ -7,13 +7,22 @@ import ApplicationForm from "@/components/ApplicationForm";
 import ListView from "@/components/ListView";
 import KanbanBoard from "@/components/KanbanBoard";
 import Analytics from "@/components/Analytics";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
 type ViewMode = "list" | "kanban";
 
-export default function Dashboard() {
+interface PrefillData {
+  company?: string;
+  role?: string;
+  job_link?: string;
+  source?: string;
+}
+
+function DashboardInner() {
   const supabase = createClient();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
@@ -22,6 +31,24 @@ export default function Dashboard() {
   const [search, setSearch] = useState("");
   const [stageFilter, setStageFilter] = useState<Stage | "All">("All");
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [prefill, setPrefill] = useState<PrefillData | undefined>();
+
+  useEffect(() => {
+    const company = searchParams.get("company");
+    const role = searchParams.get("role");
+    const job_link = searchParams.get("job_link");
+    const source = searchParams.get("source");
+    if (company || role || job_link) {
+      setPrefill({
+        company: company || "",
+        role: role || "",
+        job_link: job_link || "",
+        source: source || "LinkedIn",
+      });
+      setShowForm(true);
+      window.history.replaceState({}, "", "/");
+    }
+  }, [searchParams]);
 
   const fetchApplications = useCallback(async () => {
     const { data, error } = await supabase
@@ -181,12 +208,20 @@ export default function Dashboard() {
           <h1 className="text-xl font-bold text-slate-800">
             Job Tracker
           </h1>
-          <button
-            onClick={handleSignOut}
-            className="text-sm text-slate-500 hover:text-slate-700 transition"
-          >
-            Sign Out
-          </button>
+          <div className="flex items-center gap-4">
+            <a
+              href="/bookmarklet"
+              className="text-sm text-blue-600 hover:text-blue-800 transition"
+            >
+              LinkedIn Saver
+            </a>
+            <button
+              onClick={handleSignOut}
+              className="text-sm text-slate-500 hover:text-slate-700 transition"
+            >
+              Sign Out
+            </button>
+          </div>
         </div>
       </header>
 
@@ -310,8 +345,15 @@ export default function Dashboard() {
       {/* Add Form Modal */}
       {showForm && (
         <ApplicationForm
-          onSubmit={handleAdd}
-          onCancel={() => setShowForm(false)}
+          prefill={prefill}
+          onSubmit={(data) => {
+            handleAdd(data);
+            setPrefill(undefined);
+          }}
+          onCancel={() => {
+            setShowForm(false);
+            setPrefill(undefined);
+          }}
         />
       )}
 
@@ -324,5 +366,13 @@ export default function Dashboard() {
         />
       )}
     </div>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-50"><div className="text-slate-400">Loading...</div></div>}>
+      <DashboardInner />
+    </Suspense>
   );
 }

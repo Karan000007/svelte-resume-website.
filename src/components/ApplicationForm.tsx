@@ -3,23 +3,31 @@
 import { Application, STAGES, PRIORITIES, SOURCES, Stage, Priority, Source } from "@/lib/types";
 import { useState } from "react";
 
+interface PrefillData {
+  company?: string;
+  role?: string;
+  job_link?: string;
+  source?: string;
+}
+
 interface Props {
   application?: Application;
+  prefill?: PrefillData;
   onSubmit: (data: Partial<Application>) => void;
   onCancel: () => void;
 }
 
-export default function ApplicationForm({ application, onSubmit, onCancel }: Props) {
+export default function ApplicationForm({ application, prefill, onSubmit, onCancel }: Props) {
   const [form, setForm] = useState({
-    company: application?.company ?? "",
-    role: application?.role ?? "",
+    company: application?.company ?? prefill?.company ?? "",
+    role: application?.role ?? prefill?.role ?? "",
     stage: application?.stage ?? ("Saved" as Stage),
     priority: application?.priority ?? ("Medium" as Priority),
-    source: application?.source ?? ("LinkedIn" as Source),
+    source: application?.source ?? (prefill?.source as Source) ?? ("LinkedIn" as Source),
     applied_date: application?.applied_date ?? "",
     compensation: application?.compensation ?? "",
     contact: application?.contact ?? "",
-    job_link: application?.job_link ?? "",
+    job_link: application?.job_link ?? prefill?.job_link ?? "",
     next_step: application?.next_step ?? "",
     next_step_date: application?.next_step_date ?? "",
     notes: application?.notes ?? "",
