@@ -6,6 +6,8 @@ interface Props {
   applications: Application[];
   onEdit: (app: Application) => void;
   onDelete: (id: string) => void;
+  calendarConnected?: boolean;
+  onSyncCalendar?: (app: Application) => void;
 }
 
 function isOverdue(nextStepDate: string | null): boolean {
@@ -13,7 +15,7 @@ function isOverdue(nextStepDate: string | null): boolean {
   return new Date(nextStepDate + "T23:59:59") < new Date();
 }
 
-export default function ListView({ applications, onEdit, onDelete }: Props) {
+export default function ListView({ applications, onEdit, onDelete, calendarConnected, onSyncCalendar }: Props) {
   if (applications.length === 0) {
     return (
       <div className="text-center py-16 text-slate-400">
@@ -115,6 +117,14 @@ export default function ListView({ applications, onEdit, onDelete }: Props) {
                     >
                       Edit
                     </button>
+                    {calendarConnected && app.next_step && app.next_step_date && (
+                      <button
+                        onClick={() => onSyncCalendar?.(app)}
+                        className="px-2 py-1 text-xs font-medium text-green-600 hover:bg-green-50 rounded transition"
+                      >
+                        Cal
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         if (confirm(`Delete ${app.company} - ${app.role}?`)) {

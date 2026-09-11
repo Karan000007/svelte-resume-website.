@@ -7,6 +7,8 @@ interface Props {
   onEdit: (app: Application) => void;
   onDelete: (id: string) => void;
   onStageChange: (id: string, stage: Stage) => void;
+  calendarConnected?: boolean;
+  onSyncCalendar?: (app: Application) => void;
 }
 
 function isOverdue(nextStepDate: string | null): boolean {
@@ -19,6 +21,8 @@ export default function KanbanBoard({
   onEdit,
   onDelete,
   onStageChange,
+  calendarConnected,
+  onSyncCalendar,
 }: Props) {
   const columns = STAGES.map((stage) => ({
     stage,
@@ -111,6 +115,14 @@ export default function KanbanBoard({
                     >
                       Edit
                     </button>
+                    {calendarConnected && app.next_step && app.next_step_date && (
+                      <button
+                        onClick={() => onSyncCalendar?.(app)}
+                        className="text-xs text-green-600 hover:bg-green-50 px-2 py-0.5 rounded transition"
+                      >
+                        Cal
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         if (confirm(`Delete ${app.company} - ${app.role}?`)) {

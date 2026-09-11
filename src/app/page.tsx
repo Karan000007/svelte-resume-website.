@@ -32,6 +32,14 @@ function DashboardInner() {
   const [stageFilter, setStageFilter] = useState<Stage | "All">("All");
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [prefill, setPrefill] = useState<PrefillData | undefined>();
+  const [calendarConnected, setCalendarConnected] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/calendar/status")
+      .then((r) => r.json())
+      .then((d) => setCalendarConnected(d.connected))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const company = searchParams.get("company");
@@ -113,6 +121,33 @@ function DashboardInner() {
       return;
     }
     fetchApplications();
+  }
+
+  async function syncToCalendar(app: {
+    company: string;
+    role: string;
+    next_step: string | null;
+    next_step_date: string | null;
+  }) {
+    if (!calendarConnected || !app.next_step || !app.next_step_date) return;
+
+    try {
+      const res = await fetch("/api/calendar/create-event", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          company: app.company,
+          role: app.role,
+          nextStep: app.next_step,
+          nextStepDate: app.next_step_date,
+        }),
+      });
+      if (res.ok) {
+        alert("Calendar event created!");
+      }
+    } catch {
+      // silently fail
+    }
   }
 
   async function handleStageChange(id: string, stage: Stage) {
@@ -215,6 +250,16 @@ function DashboardInner() {
             >
               LinkedIn Saver
             </a>
+            {calendarConnected ? (
+              <span className="text-sm text-green-600">Calendar Connected</span>
+            ) : (
+              <a
+                href="/api/calendar/auth"
+                className="text-sm text-blue-600 hover:text-blue-800 transition"
+              >
+                Connect Calendar
+              </a>
+            )}
             <button
               onClick={handleSignOut}
               className="text-sm text-slate-500 hover:text-slate-700 transition"
@@ -323,6 +368,8 @@ function DashboardInner() {
                 setShowForm(false);
               }}
               onDelete={handleDelete}
+              calendarConnected={calendarConnected}
+              onSyncCalendar={syncToCalendar}
             />
           ) : (
             <KanbanBoard
@@ -333,6 +380,8 @@ function DashboardInner() {
               }}
               onDelete={handleDelete}
               onStageChange={handleStageChange}
+              calendarConnected={calendarConnected}
+              onSyncCalendar={syncToCalendar}
             />
           )}
         </div>
